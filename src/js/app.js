@@ -323,6 +323,13 @@ async function loadAdvertiserData() {
         const allKws = keywordsRes.ok ? (keywordsRes.data || []) : [];
         const allOneshot = oneshotRes.ok ? (oneshotRes.data || []) : [];
         
+        // v2.1 — 디버그 로그 (이메일 누락 진단)
+        console.log("[광고주 데이터] 프로필:", profiles.length, "건");
+        if (profiles.length > 0) {
+            console.log("[광고주 데이터] 첫 프로필 키:", Object.keys(profiles[0]));
+            console.log("[광고주 데이터] 첫 프로필 샘플:", profiles[0]);
+        }
+        
         const myUserId = Session.user()?.id;
         
         // 결과도 머지
@@ -386,11 +393,23 @@ async function loadAdvertiserData() {
         
         State.advertiserGroups = Array.from(advertiserMap.values())
             .filter(a => a.groups.length > 0)
-            .sort((a, b) => (a.profile.email || "").localeCompare(b.profile.email || ""));
+            .sort((a, b) => (advertiserDisplayName(a.profile)).localeCompare(advertiserDisplayName(b.profile)));
+        
+        console.log("[광고주 데이터] 최종 광고주 수:", State.advertiserGroups.length);
     } catch (e) {
         console.error("광고주 데이터 로드 실패:", e);
         State.advertiserGroups = [];
     }
+}
+
+/** 광고주 표시명 — email 우선, 없으면 display_name, 그것도 없으면 user_id 일부 */
+function advertiserDisplayName(profile) {
+    if (!profile) return "(알 수 없음)";
+    if (profile.email && profile.email !== "(이메일 없음)") return profile.email;
+    if (profile.display_name) return profile.display_name;
+    if (profile.notes) return profile.notes;
+    if (profile.user_id) return "사용자 " + profile.user_id.slice(0, 8);
+    return "(이메일 없음)";
 }
 
 // 새로고침
@@ -493,7 +512,7 @@ function renderGroups() {
     if (State.isAdmin && State.advertiserGroups.length > 0) {
         html += `<div class="section-divider">👥 광고주 그룹</div>`;
         for (const adv of State.advertiserGroups) {
-            const advEmail = escapeHtml(adv.profile.email || "(이메일 없음)");
+            const advEmail = escapeHtml(advertiserDisplayName(adv.profile));
             const groupCount = adv.groups.length;
             const totalKws = adv.groups.reduce((s, g) => s + (g.keywords?.length || 0), 0);
             html += `
@@ -504,7 +523,7 @@ function renderGroups() {
                         <div class="advertiser-folder-count">${groupCount}그룹 · ${totalKws}키워드</div>
                     </div>
                     <div class="advertiser-folder-body">
-                        ${adv.groups.map(g => renderGroupCard(g, { ownerUserId: adv.profile.user_id, ownerEmail: adv.profile.email })).join("")}
+                        ${adv.groups.map(g => renderGroupCard(g, { ownerUserId: adv.profile.user_id, ownerEmail: advertiserDisplayName(adv.profile) })).join("")}
                     </div>
                 </div>
             `;
@@ -1712,7 +1731,7 @@ async function renderMatrix() {
         for (const adv of State.advertiserGroups) {
             for (const g of adv.groups) {
                 if (g.mode === "monthly") {
-                    advMonthlyGroups.push({ ...g, _ownerEmail: adv.profile.email, _ownerUserId: adv.profile.user_id });
+                    advMonthlyGroups.push({ ...g, _ownerEmail: advertiserDisplayName(adv.profile), _ownerUserId: adv.profile.user_id });
                 }
             }
         }

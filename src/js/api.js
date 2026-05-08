@@ -63,7 +63,13 @@ const API = {
     // ========== 그룹 ==========
 
     async listGroups() {
-        const res = await DB.select("groups", { order: "id.asc" });
+        // v2.1 — admin은 RLS가 모든 그룹 다 주기 때문에 본인 user_id 필터 명시
+        const myUserId = Session.user()?.id;
+        const opts = { order: "id.asc" };
+        if (myUserId) {
+            opts.filters = { user_id: `eq.${myUserId}` };
+        }
+        const res = await DB.select("groups", opts);
         if (!res.ok) return [];
         return res.data.map(r => ({
             ...r,
@@ -160,9 +166,13 @@ const API = {
     // ========== 키워드 ==========
 
     async listKeywords() {
-        const res = await DB.select("keywords", {
-            order: "sort_order.asc,id.asc",
-        });
+        // v2.1 — admin은 RLS가 모든 키워드 주므로 본인 user_id 필터 명시
+        const myUserId = Session.user()?.id;
+        const opts = { order: "sort_order.asc,id.asc" };
+        if (myUserId) {
+            opts.filters = { user_id: `eq.${myUserId}` };
+        }
+        const res = await DB.select("keywords", opts);
         if (!res.ok) return [];
 
         const groups = await this.listGroups();
