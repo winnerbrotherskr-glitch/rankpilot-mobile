@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#FFFFFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>📊</text></svg>">
+    <title>RankPilot</title>
+    <link rel="stylesheet" href="src/css/styles.css">
+</head>
+<body>
+    <!-- ============================================================
+         로딩 화면
+         ============================================================ -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-logo">📊 RankPilot</div>
+        <div class="spinner spinner-lg"></div>
+    </div>
+
+    <!-- ============================================================
+         로그인 화면
+         ============================================================ -->
+    <div id="login-screen" class="login-screen hidden">
+        <div class="login-card">
+            <div class="login-logo">📊 RankPilot</div>
+            <div class="login-subtitle">모바일 대시보드</div>
+            <form id="login-form" class="login-form">
+                <input type="email" id="login-email" placeholder="이메일" autocomplete="email" required>
+                <input type="password" id="login-password" placeholder="비밀번호" autocomplete="current-password" required>
+                <button type="submit" id="login-btn">로그인</button>
+                <div id="login-error" class="login-error hidden"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         메인 앱
+         ============================================================ -->
+    <div id="main-app" class="main-app hidden">
+
+        <!-- 헤더 -->
+        <header class="header">
+            <div id="header-back-btn" class="header-back hidden" aria-label="뒤로">‹</div>
+            <div class="header-title" id="header-title">RankPilot</div>
+            <div class="header-actions">
+                <button id="refresh-btn" class="header-btn" aria-label="새로고침">↻</button>
+            </div>
+        </header>
+
+        <!-- 화면 영역 -->
+        <main class="content">
+
+            <!-- ========== 화면 1: 홈 (대시보드) ========== -->
+            <section id="screen-home" class="screen active">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">안녕하세요 👋</div>
+                        <div class="page-subtitle" id="home-subtitle">RankPilot</div>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">총 키워드</div>
+                        <div class="stat-value" id="stat-total">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">노출 중</div>
+                        <div class="stat-value stat-good" id="stat-exposed">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">조치 필요</div>
+                        <div class="stat-value stat-bad" id="stat-action">-</div>
+                    </div>
+                </div>
+
+                <div class="page-header" style="margin-top: var(--space-5); margin-bottom: var(--space-2);">
+                    <div class="page-subtitle" style="font-size: 15px; font-weight: 600; color: var(--color-text);">🚨 조치 필요한 키워드</div>
+                </div>
+                <div id="home-action-list" class="list">
+                    <div class="empty-state"><div class="spinner" style="margin: 0 auto;"></div></div>
+                </div>
+
+                <div class="page-header" style="margin-top: var(--space-5); margin-bottom: var(--space-2);">
+                    <div class="page-subtitle" style="font-size: 15px; font-weight: 600; color: var(--color-text);">📁 그룹</div>
+                    <button class="btn btn-ghost btn-sm" id="home-go-groups">전체 →</button>
+                </div>
+                <div id="home-groups-list" class="list">
+                    <div class="empty-state">로딩 중...</div>
+                </div>
+            </section>
+
+            <!-- ========== 화면 2: 그룹 목록 ========== -->
+            <section id="screen-groups" class="screen">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">그룹</div>
+                        <div class="page-subtitle" id="groups-count">-</div>
+                    </div>
+                    <button id="btn-new-group" class="btn btn-primary btn-sm">+ 새 그룹</button>
+                </div>
+                <div id="groups-list" class="list">
+                    <div class="empty-state">로딩 중...</div>
+                </div>
+            </section>
+
+            <!-- ========== 화면 3: 그룹 상세 (키워드 카드 리스트) ========== -->
+            <section id="screen-group-detail" class="screen">
+                <div id="group-detail-content"></div>
+            </section>
+
+            <!-- ========== 화면 4: 월보장 (매트릭스) ========== -->
+            <section id="screen-matrix" class="screen">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">월보장</div>
+                        <div class="page-subtitle">최근 7일 노출 현황</div>
+                    </div>
+                </div>
+                <div class="filter-bar">
+                    <select id="matrix-group-filter">
+                        <option value="">전체 월보장 그룹</option>
+                    </select>
+                </div>
+                <div id="matrix-content">
+                    <div class="empty-state">로딩 중...</div>
+                </div>
+            </section>
+
+            <!-- ========== 화면 5: 내정보 (설정) ========== -->
+            <section id="screen-settings" class="screen">
+                <div class="page-header">
+                    <div class="page-title">내정보</div>
+                </div>
+                <div class="settings-section">
+                    <div class="settings-section-title">계정</div>
+                    <div class="settings-card">
+                        <div class="settings-row">
+                            <div class="settings-row-label">이메일</div>
+                            <div class="settings-row-value" id="settings-email">-</div>
+                        </div>
+                        <div class="settings-row">
+                            <div class="settings-row-label">플랜</div>
+                            <div class="settings-row-value" id="settings-plan">-</div>
+                        </div>
+                        <div class="settings-row">
+                            <div class="settings-row-label">만료일</div>
+                            <div class="settings-row-value" id="settings-expires">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <div class="settings-section-title">사용량</div>
+                    <div class="settings-card">
+                        <div class="settings-row">
+                            <div class="settings-row-label">키워드</div>
+                            <div class="settings-row-value" id="settings-keywords">-</div>
+                        </div>
+                        <div class="settings-row">
+                            <div class="settings-row-label">그룹</div>
+                            <div class="settings-row-value" id="settings-groups">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <div class="settings-section-title">고객지원</div>
+                    <div class="settings-card">
+                        <div class="settings-row" id="settings-kakao-row" style="cursor: pointer;">
+                            <div class="settings-row-label">💬 카카오톡 문의</div>
+                            <div class="settings-row-value">congsin</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <button class="settings-logout-btn" id="settings-logout">로그아웃</button>
+                </div>
+                <div class="settings-footer">RankPilot Mobile v2.0</div>
+            </section>
+
+        </main>
+
+        <!-- ============================================================
+             하단 탭 바
+             ============================================================ -->
+        <nav class="bottom-tabs">
+            <button class="bottom-tab active" data-tab="home">
+                <svg class="bottom-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+                <span class="bottom-tab-label">홈</span>
+            </button>
+            <button class="bottom-tab" data-tab="groups">
+                <svg class="bottom-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <span class="bottom-tab-label">그룹</span>
+            </button>
+            <button class="bottom-tab" data-tab="matrix">
+                <svg class="bottom-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span class="bottom-tab-label">월보장</span>
+            </button>
+            <button class="bottom-tab" data-tab="settings">
+                <svg class="bottom-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg>
+                <span class="bottom-tab-label">내정보</span>
+            </button>
+            <button class="bottom-tab" data-tab="more" id="bottom-tab-more" style="display:none">
+                <svg class="bottom-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="18" cy="12" r="1"/></svg>
+                <span class="bottom-tab-label">더보기</span>
+            </button>
+        </nav>
+
+        <!-- ============================================================
+             모달들 (바텀시트)
+             ============================================================ -->
+
+        <!-- 그룹 만들기/편집 -->
+        <div id="group-modal" class="modal-overlay hidden">
+            <div class="modal-backdrop" data-close="group-modal"></div>
+            <div class="modal-sheet">
+                <div class="modal-sheet-handle"></div>
+                <div class="modal-header">
+                    <div class="modal-title" id="group-modal-title">새 그룹</div>
+                    <button class="modal-close" data-close="group-modal">✕</button>
+                </div>
+                <form id="group-form" class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="g-name">그룹명</label>
+                        <input class="form-input" type="text" id="g-name" placeholder="예: 강남 헬스장" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">유형</label>
+                        <div class="segmented" id="g-mode-seg">
+                            <button type="button" class="segmented-btn active" data-mode="monthly">월보장</button>
+                            <button type="button" class="segmented-btn" data-mode="oneshot">건바이</button>
+                        </div>
+                        <div class="form-help" id="g-mode-help">월보장: 매일 자동 검사하며 노출 추적</div>
+                    </div>
+                    <div class="form-group" id="g-slot-group">
+                        <label class="form-label" for="g-slot-limit">슬롯 한도 (선택)</label>
+                        <input class="form-input" type="number" id="g-slot-limit" placeholder="0 = 무제한" min="0">
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button type="button" class="modal-btn modal-btn-secondary" data-close="group-modal">취소</button>
+                    <button type="button" class="modal-btn modal-btn-primary" id="group-save-btn">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 키워드 추가 -->
+        <div id="kw-modal" class="modal-overlay hidden">
+            <div class="modal-backdrop" data-close="kw-modal"></div>
+            <div class="modal-sheet">
+                <div class="modal-sheet-handle"></div>
+                <div class="modal-header">
+                    <div class="modal-title">새 키워드</div>
+                    <button class="modal-close" data-close="kw-modal">✕</button>
+                </div>
+                <form id="kw-form" class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="kw-keyword">키워드</label>
+                        <input class="form-input" type="text" id="kw-keyword" placeholder="예: 강남 헬스장" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="kw-url">타겟 URL</label>
+                        <input class="form-input" type="text" id="kw-url" placeholder="예: blog.naver.com/abc/123" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-row" style="cursor: pointer;">
+                            <input type="checkbox" id="kw-capture" checked>
+                            <div class="checkbox-row-content">
+                                <div class="checkbox-row-title">📷 캡처 저장</div>
+                                <div class="checkbox-row-meta">검사 시 화면 캡처를 저장해요</div>
+                            </div>
+                        </label>
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button type="button" class="modal-btn modal-btn-secondary" data-close="kw-modal">취소</button>
+                    <button type="button" class="modal-btn modal-btn-primary" id="kw-save-btn">추가</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 카톡 공유 (단일 키워드) -->
+        <div id="share-modal" class="modal-overlay hidden">
+            <div class="modal-backdrop" data-close="share-modal"></div>
+            <div class="modal-sheet">
+                <div class="modal-sheet-handle"></div>
+                <div class="modal-header">
+                    <div class="modal-title">📱 광고주에게 공유</div>
+                    <button class="modal-close" data-close="share-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="share-preview" id="share-preview-wrap">
+                        <div class="share-preview-card">
+                            <div class="share-preview-title" id="share-preview-title">제목</div>
+                            <div class="share-preview-body" id="share-preview-body">본문</div>
+                            <div class="share-preview-img-grid" id="share-preview-imgs"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="modal-btn modal-btn-secondary" id="share-copy-btn">📋 복사</button>
+                    <button type="button" class="modal-btn modal-btn-kakao" id="share-send-btn">📲 공유하기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 그룹 전체 카톡 보고 -->
+        <div id="group-share-modal" class="modal-overlay hidden">
+            <div class="modal-backdrop" data-close="group-share-modal"></div>
+            <div class="modal-sheet">
+                <div class="modal-sheet-handle"></div>
+                <div class="modal-header">
+                    <div class="modal-title">📊 건바이 보고</div>
+                    <button class="modal-close" data-close="group-share-modal">✕</button>
+                </div>
+                <div class="modal-body" id="group-share-body">
+                    <div class="empty-state"><div class="spinner" style="margin: 0 auto;"></div></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="modal-btn modal-btn-secondary" id="group-share-copy-btn">📋 복사</button>
+                    <button type="button" class="modal-btn modal-btn-kakao" id="group-share-send-btn">📲 공유하기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 캡처 합성 모달 -->
+        <div id="merge-modal" class="modal-overlay hidden">
+            <div class="modal-backdrop" data-close="merge-modal"></div>
+            <div class="modal-sheet">
+                <div class="modal-sheet-handle"></div>
+                <div class="modal-header">
+                    <div class="modal-title">📷 캡처 합성</div>
+                    <button class="modal-close" data-close="merge-modal">✕</button>
+                </div>
+                <div class="modal-body" id="merge-body">
+                    <div class="empty-state"><div class="spinner" style="margin: 0 auto;"></div></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="modal-btn modal-btn-secondary" data-close="merge-modal">취소</button>
+                    <button type="button" class="modal-btn modal-btn-primary" id="merge-share-btn">📲 합성 + 공유</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 토스트 컨테이너 -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- 캡처 뷰어 -->
+    <div id="capture-viewer" class="capture-viewer hidden">
+        <div class="capture-viewer-header">
+            <span id="capture-viewer-title">캡처</span>
+            <button class="capture-viewer-close" id="capture-viewer-close">✕</button>
+        </div>
+        <div class="capture-viewer-img-wrap">
+            <img class="capture-viewer-img" id="capture-viewer-img" alt="">
+        </div>
+    </div>
+
+    <!-- ============================================================
+         스크립트 — 순서 중요!
+         ============================================================ -->
+    <script src="src/js/supabase.js"></script>
+    <script src="src/js/api.js"></script>
+    <script src="src/js/app.js"></script>
+</body>
+</html>

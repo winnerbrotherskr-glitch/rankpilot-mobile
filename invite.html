@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#FFFFFF">
+    <title>RankPilot 가입 - 비밀번호 설정</title>
+    <style>
+        :root {
+            --color-bg: #FFFFFF;
+            --color-bg-secondary: #F4F6F8;
+            --color-text: #191F28;
+            --color-text-secondary: #4E5968;
+            --color-text-tertiary: #8B95A1;
+            --color-primary: #3182F6;
+            --color-primary-dark: #1B64DA;
+            --color-primary-bg: #E6F0FE;
+            --color-success: #00B884;
+            --color-success-bg: #E6F7F2;
+            --color-success-text: #007A56;
+            --color-danger: #E14B4B;
+            --color-danger-bg: #FCEAEA;
+            --color-danger-text: #A02828;
+            --color-border: rgba(0, 0, 0, 0.06);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: var(--font-sans);
+            background: var(--color-bg-secondary);
+            color: var(--color-text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container { width: 100%; max-width: 440px; }
+        .card {
+            background: var(--color-bg);
+            border-radius: var(--radius-lg);
+            padding: 32px 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+        .logo {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--color-primary);
+            letter-spacing: -0.6px;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin-bottom: 28px;
+        }
+        .welcome {
+            background: var(--color-primary-bg);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 24px;
+            font-size: 13.5px;
+            line-height: 1.6;
+            color: var(--color-text-secondary);
+        }
+        .welcome strong {
+            color: var(--color-primary-dark);
+            font-weight: 600;
+        }
+        .form-group { margin-bottom: 16px; }
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .input {
+            width: 100%;
+            height: 52px;
+            padding: 0 16px;
+            background: var(--color-bg-secondary);
+            border: none;
+            border-radius: var(--radius-md);
+            color: var(--color-text);
+            font-size: 16px;
+            font-family: inherit;
+            transition: background 0.15s;
+        }
+        .input:focus {
+            outline: none;
+            background: var(--color-primary-bg);
+        }
+        .btn {
+            width: 100%;
+            height: 56px;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 17px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-top: 8px;
+        }
+        .btn:active:not(:disabled) {
+            background: var(--color-primary-dark);
+            transform: scale(0.98);
+        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-download {
+            width: 100%;
+            height: 56px;
+            background: var(--color-bg-secondary);
+            color: var(--color-text);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 16px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .btn-download:active { transform: scale(0.98); }
+        .help-text {
+            font-size: 12px;
+            color: var(--color-text-tertiary);
+            margin-top: 6px;
+        }
+        .hidden { display: none !important; }
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--color-text-secondary);
+        }
+        .spinner {
+            width: 36px;
+            height: 36px;
+            margin: 0 auto 16px;
+            border: 3px solid rgba(49, 130, 246, 0.15);
+            border-top-color: var(--color-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .info-block {
+            background: var(--color-bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 20px;
+            font-size: 13.5px;
+            line-height: 1.6;
+            color: var(--color-text-secondary);
+        }
+        .info-block strong {
+            color: var(--color-text);
+        }
+        .info-block .email {
+            color: var(--color-primary-dark);
+            font-weight: 600;
+        }
+        .success-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            background: var(--color-success-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: var(--color-success-text);
+        }
+        .error-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            background: var(--color-danger-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: var(--color-danger-text);
+        }
+        .center-title {
+            text-align: center;
+            font-size: 19px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--color-text);
+            letter-spacing: -0.4px;
+        }
+        .center-text {
+            text-align: center;
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="logo">📊 RankPilot</div>
+            <div class="subtitle">계정 가입 및 비밀번호 설정</div>
+
+            <!-- Loading -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <div>초대 정보를 확인하고 있어요...</div>
+            </div>
+
+            <!-- Sign-up form -->
+            <div id="signup-form" class="hidden">
+                <div class="welcome" id="welcome-block">
+                    <div id="welcome-name" style="margin-bottom: 6px;"><strong>환영합니다 👋</strong></div>
+                    <div>RankPilot에 초대되셨어요. 아래 정보로 가입을 완료해주세요.</div>
+                </div>
+
+                <div class="form-group">
+                    <label>이메일</label>
+                    <div class="info-block" style="margin: 0;">
+                        <span class="email" id="invite-email">-</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">비밀번호</label>
+                    <input type="password" id="password" class="input" placeholder="6자 이상 입력해주세요" autocomplete="new-password">
+                    <div class="help-text">6자 이상이어야 해요</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password-confirm">비밀번호 확인</label>
+                    <input type="password" id="password-confirm" class="input" placeholder="다시 한 번 입력해주세요" autocomplete="new-password">
+                </div>
+
+                <button type="button" class="btn" id="submit-btn">가입 완료</button>
+            </div>
+
+            <!-- Success -->
+            <div id="success-screen" class="hidden">
+                <div class="success-icon">✓</div>
+                <div class="center-title">가입이 완료됐어요!</div>
+                <div class="center-text">
+                    <span class="email" id="success-email">-</span><br>
+                    이제 RankPilot을 사용할 수 있어요.
+                </div>
+                <a href="/" class="btn-download" style="background: var(--color-primary); color: white;">
+                    📊 모바일 대시보드 시작하기
+                </a>
+                <div class="help-text" style="text-align: center; margin-top: 12px;">
+                    PC 버전은 관리자에게 문의해주세요
+                </div>
+            </div>
+
+            <!-- Error -->
+            <div id="error-screen" class="hidden">
+                <div class="error-icon">!</div>
+                <div class="center-title">초대 링크 오류</div>
+                <div class="center-text" id="error-message">잘못된 초대 링크예요</div>
+                <div class="help-text" style="text-align: center;">
+                    카카오톡 ID <strong style="color: var(--color-text);">congsin</strong> 으로 문의해주세요
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://yisaqdwtudxrqivnqacz.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_JCEa0-wSZwOIYPlBUKuxtA_5wFMfZ0_";
+
+        const $ = (id) => document.getElementById(id);
+
+        function getTokenFromUrl() {
+            const path = window.location.pathname;
+            const match = path.match(/\/invite\/([^/?]+)/);
+            if (match) return match[1];
+            const params = new URLSearchParams(window.location.search);
+            return params.get('token');
+        }
+
+        async function loadInvitation(token) {
+            const response = await fetch(
+                `${SUPABASE_URL}/rest/v1/invitations?token=eq.${encodeURIComponent(token)}&status=eq.pending&select=*`,
+                {
+                    headers: {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": `Bearer ${SUPABASE_KEY}`,
+                    },
+                }
+            );
+            if (!response.ok) throw new Error("초대 정보를 불러올 수 없어요");
+            const data = await response.json();
+            if (!data || data.length === 0) {
+                throw new Error("초대 링크가 유효하지 않거나 이미 사용되었어요");
+            }
+            const invitation = data[0];
+            if (new Date(invitation.expires_at) < new Date()) {
+                throw new Error("초대 링크가 만료되었어요 (7일 경과). 다시 요청해주세요.");
+            }
+            return invitation;
+        }
+
+        async function acceptInvitation(token, password) {
+            const response = await fetch(
+                `${SUPABASE_URL}/functions/v1/accept-invitation`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": `Bearer ${SUPABASE_KEY}`,
+                    },
+                    body: JSON.stringify({ token, password }),
+                }
+            );
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "가입 실패");
+            return data;
+        }
+
+        function showError(message) {
+            $("loading").classList.add("hidden");
+            $("signup-form").classList.add("hidden");
+            $("success-screen").classList.add("hidden");
+            $("error-screen").classList.remove("hidden");
+            $("error-message").textContent = message;
+        }
+
+        function showSignupForm(invitation) {
+            $("loading").classList.add("hidden");
+            $("signup-form").classList.remove("hidden");
+            $("invite-email").textContent = invitation.email;
+            if (invitation.display_name) {
+                $("welcome-name").innerHTML = `<strong>${escapeHtml(invitation.display_name)}님 환영해요 👋</strong>`;
+            }
+        }
+
+        function showSuccess(email) {
+            $("loading").classList.add("hidden");
+            $("signup-form").classList.add("hidden");
+            $("error-screen").classList.add("hidden");
+            $("success-screen").classList.remove("hidden");
+            if (email) $("success-email").textContent = email;
+        }
+
+        function escapeHtml(s) {
+            return String(s || "").replace(/[&<>"']/g, c => ({
+                "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+            }[c]));
+        }
+
+        async function main() {
+            const token = getTokenFromUrl();
+            if (!token) {
+                showError("초대 링크가 잘못되었어요");
+                return;
+            }
+            let savedEmail = null;
+            try {
+                const invitation = await loadInvitation(token);
+                savedEmail = invitation.email;
+                showSignupForm(invitation);
+
+                $("submit-btn").addEventListener("click", async () => {
+                    const password = $("password").value;
+                    const confirm = $("password-confirm").value;
+                    if (!password || password.length < 6) {
+                        alert("비밀번호는 6자 이상이어야 해요");
+                        return;
+                    }
+                    if (password !== confirm) {
+                        alert("비밀번호가 일치하지 않아요");
+                        return;
+                    }
+                    const btn = $("submit-btn");
+                    btn.disabled = true;
+                    btn.textContent = "가입 처리 중...";
+                    try {
+                        await acceptInvitation(token, password);
+                        showSuccess(savedEmail);
+                    } catch (e) {
+                        alert("가입 실패: " + e.message);
+                        btn.disabled = false;
+                        btn.textContent = "가입 완료";
+                    }
+                });
+
+                $("password-confirm").addEventListener("keypress", (e) => {
+                    if (e.key === "Enter") $("submit-btn").click();
+                });
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        main();
+    </script>
+</body>
+</html>
