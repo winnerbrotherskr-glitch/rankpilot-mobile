@@ -25,6 +25,10 @@ const State = {
     matrixGroupId: null,     // 매트릭스 화면에서 보고 있는 그룹
     
     captureUrlCache: new Map(), // filename -> blob url (캐시)
+    
+    // 선택 모드 (다중 공유)
+    selectMode: false,           // 선택 모드 ON/OFF
+    selectedKwIds: new Set(),    // 선택된 키워드 ID set
 };
 
 // ================================================================
@@ -141,6 +145,14 @@ function classifyKeyword(kw) {
 // ================================================================
 
 function navigate(tab, params = {}) {
+    // 다른 탭으로 가면 선택 모드 자동 종료
+    if (State.currentTab === "group-detail" && tab !== "group-detail") {
+        State.selectMode = false;
+        State.selectedKwIds.clear();
+        const bar = $("#selection-bar");
+        if (bar) bar.remove();
+    }
+    
     State.currentTab = tab;
     
     // 모든 화면 숨김
@@ -607,6 +619,7 @@ function renderGroupDetail() {
     };
     
     const filterKey = State._groupDetailFilter || "all";
+    const selectMode = State.selectMode;
     
     let html = `
         <div class="group-detail-header">
@@ -616,23 +629,35 @@ function renderGroupDetail() {
             </div>
             <div class="group-detail-meta">
                 ${ownerEmail ? `👤 ${escapeHtml(ownerEmail)} · ` : ''}
-                키워드 ${keywords.length}개
+                키워드 ${keywords.length}개${selectMode ? ` · <span style="color: var(--color-primary); font-weight: 600;">선택 모드</span>` : ''}
             </div>
             <div class="group-detail-actions">
-                ${!isMonthly ? `
-                    <button class="group-action-btn is-primary" id="grp-detail-share-all">
-                        📊 카톡 보고
+                ${selectMode ? `
+                    <button class="group-action-btn" id="grp-detail-cancel-select">
+                        ✕ 취소
+                    </button>
+                    <button class="group-action-btn" id="grp-detail-select-all">
+                        ☑ 전체
                     </button>
                 ` : `
-                    <button class="group-action-btn" id="grp-detail-go-matrix">
-                        📊 7일 매트릭스
+                    <button class="group-action-btn is-primary" id="grp-detail-select-mode">
+                        ☑ 선택 공유
                     </button>
+                    ${!isMonthly ? `
+                        <button class="group-action-btn is-kakao" id="grp-detail-share-all">
+                            📊 전체 보고
+                        </button>
+                    ` : `
+                        <button class="group-action-btn" id="grp-detail-go-matrix">
+                            📊 매트릭스
+                        </button>
+                    `}
+                    ${!ownerUserId ? `
+                        <button class="group-action-btn" id="grp-detail-add-kw">
+                            + 키워드
+                        </button>
+                    ` : ''}
                 `}
-                ${!ownerUserId ? `
-                    <button class="group-action-btn" id="grp-detail-add-kw">
-                        + 키워드
-                    </button>
-                ` : ''}
             </div>
         </div>
         
@@ -659,7 +684,12 @@ function renderGroupDetail() {
             </div>
         `;
     } else {
-        html += filtered.map(k => renderKeywordCard(k, { ownerUserId })).join("");
+        html += filtered.map(k => renderKeywordCard(k, { ownerUserId, selectMode })).join("");
+    }
+    
+    // 선택 모드 하단 여백 (액션바 가림 방지)
+    if (selectMode) {
+        html += `<div style="height: 90px;"></div>`;
     }
     
     $("#group-detail-content").innerHTML = html;
@@ -669,7 +699,37 @@ function renderGroupDetail() {
         t.addEventListener("click", () => {
             State._groupDetailFilter = t.dataset.filter;
             renderGroupDetail();
+            renderSelectionBar();
         });
+    });
+    
+    // 선택 모드 토글
+    const selectModeBtn = $("#grp-detail-select-mode");
+    if (selectModeBtn) selectModeBtn.addEventListener("click", () => {
+        State.selectMode = true;
+        State.selectedKwIds.clear();
+        renderGroupDetail();
+        renderSelectionBar();
+    });
+    
+    const cancelSelectBtn = $("#grp-detail-cancel-select");
+    if (cancelSelectBtn) cancelSelectBtn.addEventListener("click", exitSelectMode);
+    
+    // 전체 선택
+    const selectAllBtn = $("#grp-detail-select-all");
+    if (selectAllBtn) selectAllBtn.addEventListener("click", () => {
+        // 현재 필터 적용된 키워드만 토글
+        const filteredIds = filtered.map(k => k.id);
+        const allSelected = filteredIds.every(id => State.selectedKwIds.has(id));
+        if (allSelected) {
+            // 전체 해제
+            filteredIds.forEach(id => State.selectedKwIds.delete(id));
+        } else {
+            // 전체 선택
+            filteredIds.forEach(id => State.selectedKwIds.add(id));
+        }
+        renderGroupDetail();
+        renderSelectionBar();
     });
     
     const shareAllBtn = $("#grp-detail-share-all");
@@ -685,6 +745,70 @@ function renderGroupDetail() {
     if (addKwBtn) addKwBtn.addEventListener("click", () => openKeywordModal(group.id));
     
     bindKeywordCardEvents($("#group-detail-content"));
+    
+    // 선택 모드면 액션바 렌더
+    renderSelectionBar();
+}
+
+// 선택 모드 종료
+function exitSelectMode() {
+    State.selectMode = false;
+    State.selectedKwIds.clear();
+    renderGroupDetail();
+    renderSelectionBar();
+}
+
+// 하단 선택 액션바 (sticky bar)
+function renderSelectionBar() {
+    let bar = $("#selection-bar");
+    if (!State.selectMode || State.currentTab !== "group-detail") {
+        if (bar) bar.remove();
+        return;
+    }
+    
+    const count = State.selectedKwIds.size;
+    
+    if (!bar) {
+        bar = document.createElement("div");
+        bar.id = "selection-bar";
+        bar.className = "selection-bar";
+        document.body.appendChild(bar);
+    }
+    
+    bar.innerHTML = `
+        <div class="selection-bar-info">
+            <span class="selection-bar-count">${count}개</span> 선택됨
+        </div>
+        <div class="selection-bar-actions">
+            <button class="selection-btn" id="selection-share-btn" ${count === 0 ? 'disabled' : ''}>
+                <span style="font-size: 16px;">📤</span>
+                <span>공유</span>
+            </button>
+        </div>
+    `;
+    
+    const shareBtn = $("#selection-share-btn");
+    if (shareBtn && count > 0) {
+        shareBtn.addEventListener("click", openSelectionShareModal);
+    }
+}
+
+// 선택된 키워드만 공유 모달 열기
+async function openSelectionShareModal() {
+    const ownerUserId = State.currentGroupContext?.ownerUserId || null;
+    const data = getGroupAndKeywords(State.currentGroupId, ownerUserId);
+    if (!data) return;
+    
+    const { group, keywords } = data;
+    const selectedKws = keywords.filter(k => State.selectedKwIds.has(k.id));
+    
+    if (selectedKws.length === 0) {
+        showToast("키워드를 선택해주세요", "warn");
+        return;
+    }
+    
+    // 기존 openGroupShareModal 재사용 (체크박스 미리 선택 상태로)
+    openGroupShareModal(group, selectedKws, ownerUserId);
 }
 
 // ================================================================
@@ -744,9 +868,11 @@ function renderKeywordCard(k, opts = {}) {
     // 액션 버튼 — 캡처 / 완료 / 공유
     const hasCapture = !!(k.oneshot_first_screenshot || (k.last_rank > 0));
     const isDone = !!(k.oneshot_first_exposed_at);
+    const selectMode = opts.selectMode || false;
+    const isSelected = selectMode && State.selectedKwIds.has(k.id);
     
     let actionsHtml = "";
-    if (!mini) {
+    if (!mini && !selectMode) {
         const ownerAttr = ownerUserId ? `data-owner="${ownerUserId}"` : "";
         actionsHtml = `
             <div class="keyword-actions">
@@ -763,27 +889,75 @@ function renderKeywordCard(k, opts = {}) {
         `;
     }
     
+    // 선택 모드 — 카드 자체 클릭 가능
+    const cardAttrs = selectMode 
+        ? `data-select-kw="${k.id}" data-owner="${ownerUserId || ''}" style="cursor: pointer;"` 
+        : '';
+    
+    // 선택 체크박스 (선택 모드에서만 좌측에 표시)
+    const checkboxHtml = selectMode ? `
+        <div class="kw-card-checkbox ${isSelected ? 'checked' : ''}">
+            ${isSelected ? '✓' : ''}
+        </div>
+    ` : '';
+    
     return `
-        <div class="keyword-card ${stateClass}">
-            <div class="keyword-header">
-                <div class="keyword-title-row">
-                    <div class="keyword-title">
-                        ${escapeHtml(k.keyword)}
-                        ${rankBadge}
-                        <span class="area-badge area-${area}">${areaLabel}</span>
+        <div class="keyword-card ${stateClass} ${isSelected ? 'is-selected' : ''}" ${cardAttrs}>
+            ${selectMode ? `
+                <div class="kw-card-row-with-check">
+                    ${checkboxHtml}
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="keyword-header">
+                            <div class="keyword-title-row">
+                                <div class="keyword-title">
+                                    ${escapeHtml(k.keyword)}
+                                    ${rankBadge}
+                                    <span class="area-badge area-${area}">${areaLabel}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="keyword-url" title="${escapeHtml(k.target_url || '')}">
+                            🔗 ${escapeHtml(shortUrl(k.target_url))}
+                        </div>
+                        <div class="keyword-meta">${metaHtml}</div>
                     </div>
                 </div>
-            </div>
-            <div class="keyword-url" title="${escapeHtml(k.target_url || '')}">
-                🔗 ${escapeHtml(shortUrl(k.target_url))}
-            </div>
-            <div class="keyword-meta">${metaHtml}</div>
-            ${actionsHtml}
+            ` : `
+                <div class="keyword-header">
+                    <div class="keyword-title-row">
+                        <div class="keyword-title">
+                            ${escapeHtml(k.keyword)}
+                            ${rankBadge}
+                            <span class="area-badge area-${area}">${areaLabel}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="keyword-url" title="${escapeHtml(k.target_url || '')}">
+                    🔗 ${escapeHtml(shortUrl(k.target_url))}
+                </div>
+                <div class="keyword-meta">${metaHtml}</div>
+                ${actionsHtml}
+            `}
         </div>
     `;
 }
 
 function bindKeywordCardEvents(container) {
+    // 선택 모드 — 카드 클릭 시 토글
+    container.querySelectorAll("[data-select-kw]").forEach(card => {
+        card.addEventListener("click", (e) => {
+            const kwId = parseInt(card.dataset.selectKw, 10);
+            if (State.selectedKwIds.has(kwId)) {
+                State.selectedKwIds.delete(kwId);
+            } else {
+                State.selectedKwIds.add(kwId);
+            }
+            renderGroupDetail();
+            renderSelectionBar();
+        });
+    });
+    
+    // 일반 모드 — 액션 버튼 클릭
     container.querySelectorAll(".kw-action-btn").forEach(btn => {
         btn.addEventListener("click", async (e) => {
             e.stopPropagation();
@@ -1015,8 +1189,10 @@ async function openShareModal(kwId, ownerUserId = null) {
     
     // 버튼 핸들러
     const sendBtn = $("#share-send-btn");
-    const copyBtn = $("#share-copy-btn");
+    const copyTextBtn = $("#share-copy-text-btn");
+    const copyImageBtn = $("#share-copy-image-btn");
     
+    // 모바일 공유 (Web Share API)
     sendBtn.onclick = async () => {
         await shareViaWebApi({
             title: title,
@@ -1025,7 +1201,22 @@ async function openShareModal(kwId, ownerUserId = null) {
             captureFilename: captureFilename,
         });
     };
-    copyBtn.onclick = () => copyToClipboard(fullText);
+    
+    // PC: 텍스트 클립보드 복사
+    copyTextBtn.onclick = () => copyToClipboard(fullText);
+    
+    // PC: 이미지 클립보드 복사
+    copyImageBtn.disabled = !captureUrl;
+    if (!captureUrl) {
+        copyImageBtn.title = "캡처가 없어요";
+    }
+    copyImageBtn.onclick = async () => {
+        if (!captureUrl) {
+            showToast("복사할 캡처가 없어요", "warn");
+            return;
+        }
+        await copyImageToClipboard(captureUrl);
+    };
 }
 
 // ================================================================
@@ -1107,9 +1298,22 @@ async function openGroupShareModal(group, keywords, ownerUserId = null) {
     
     // 버튼 핸들러
     $("#group-share-send-btn").onclick = sendGroupShare;
-    $("#group-share-copy-btn").onclick = () => {
+    
+    // PC: 텍스트 복사
+    $("#group-share-copy-text-btn").onclick = () => {
         const text = buildGroupShareText();
         if (text) copyToClipboard(text);
+        else showToast("키워드를 선택해주세요", "warn");
+    };
+    
+    // PC: 이미지 복사 (선택된 키워드들의 캡처 합성 이미지)
+    $("#group-share-copy-image-btn").onclick = async () => {
+        const selected = getSelectedShareKeywords();
+        if (selected.length === 0) {
+            showToast("키워드를 선택해주세요", "warn");
+            return;
+        }
+        await copyMergedImagesToClipboard(selected, ownerUserId);
     };
 }
 
@@ -1304,6 +1508,193 @@ async function copyToClipboard(text) {
         showToast("복사 실패", "error");
         return false;
     }
+}
+
+// ================================================================
+// PC 클립보드 — 이미지 복사
+// ================================================================
+
+/** 이미지 URL을 클립보드에 복사 (PC에서 사용 — 카톡 창에 붙여넣기 가능) */
+async function copyImageToClipboard(imageUrl) {
+    try {
+        if (!navigator.clipboard || !window.ClipboardItem) {
+            showToast("이 브라우저는 이미지 복사를 지원하지 않아요", "warn");
+            return false;
+        }
+        
+        // 이미지 다운로드
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        
+        // PNG 로 변환 (Clipboard API는 PNG 만 안전 지원)
+        let pngBlob = blob;
+        if (blob.type !== "image/png") {
+            pngBlob = await convertToPng(blob);
+        }
+        
+        const item = new ClipboardItem({ "image/png": pngBlob });
+        await navigator.clipboard.write([item]);
+        
+        showToast("📷 캡처 복사됨 — 카톡 창에 Ctrl+V", "success", 3000);
+        return true;
+    } catch (e) {
+        console.error("이미지 복사 실패:", e);
+        if (e.name === "NotAllowedError") {
+            showToast("브라우저가 클립보드 접근을 막았어요", "error");
+        } else {
+            showToast("이미지 복사 실패", "error");
+        }
+        return false;
+    }
+}
+
+/** 여러 키워드의 캡처를 합쳐서 클립보드에 복사 (가로 합성) */
+async function copyMergedImagesToClipboard(keywords, ownerUserId = null) {
+    const btn = $("#group-share-copy-image-btn");
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-inline"></span> 준비 중...';
+    }
+    
+    try {
+        // 캡처 이미지들 모으기
+        const captureUrls = [];
+        for (const k of keywords) {
+            const userId = k.user_id || ownerUserId || Session.user()?.id;
+            let filename = k.oneshot_first_screenshot;
+            if (!filename && k.last_rank > 0) {
+                try {
+                    const r = await DB.select("results", {
+                        filters: { keyword_id: `eq.${k.id}` },
+                        order: "id.desc",
+                        limit: 1,
+                    });
+                    if (r.ok && r.data?.[0]) filename = r.data[0].screenshot;
+                } catch {}
+            }
+            if (filename) {
+                try {
+                    const url = await Storage.getCaptureUrl(filename, userId);
+                    captureUrls.push({ url, label: k.keyword });
+                } catch {}
+            }
+        }
+        
+        if (captureUrls.length === 0) {
+            showToast("복사할 캡처가 없어요", "warn");
+            return false;
+        }
+        
+        // 1개면 그냥 복사
+        if (captureUrls.length === 1) {
+            return await copyImageToClipboard(captureUrls[0].url);
+        }
+        
+        // 2개 이상 — 가로로 합성
+        const mergedBlob = await mergeImagesHorizontal(captureUrls);
+        if (!mergedBlob) {
+            showToast("이미지 합성 실패", "error");
+            return false;
+        }
+        
+        if (!navigator.clipboard || !window.ClipboardItem) {
+            showToast("이 브라우저는 이미지 복사를 지원하지 않아요", "warn");
+            return false;
+        }
+        
+        const item = new ClipboardItem({ "image/png": mergedBlob });
+        await navigator.clipboard.write([item]);
+        
+        showToast(`📷 ${captureUrls.length}개 캡처 합성 복사됨`, "success", 3000);
+        return true;
+    } catch (e) {
+        console.error("합성 복사 실패:", e);
+        showToast("복사 실패: " + (e.message || ""), "error");
+        return false;
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="share-clipboard-icon">📷</span> 캡처 복사';
+        }
+    }
+}
+
+/** 이미지 blob을 PNG로 변환 */
+async function convertToPng(blob) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(blob);
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            URL.revokeObjectURL(url);
+            canvas.toBlob(b => {
+                if (b) resolve(b);
+                else reject(new Error("toBlob 실패"));
+            }, "image/png");
+        };
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error("이미지 로드 실패"));
+        };
+        img.src = url;
+    });
+}
+
+/** 여러 이미지를 가로로 합성 (PC앱 buildCarouselCapture 와 동일 로직) */
+async function mergeImagesHorizontal(items) {
+    // 모든 이미지 로드
+    const images = await Promise.all(items.map(item => 
+        new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error(`이미지 로드 실패: ${item.label}`));
+            img.src = item.url;
+        }).catch(() => null)
+    ));
+    
+    const validImages = images.filter(img => img !== null);
+    if (validImages.length === 0) return null;
+    
+    // 모든 이미지 같은 높이로 (최대 높이 기준)
+    const targetHeight = Math.max(...validImages.map(img => img.naturalHeight));
+    const padding = 20;
+    
+    // 각 이미지의 스케일된 너비 계산
+    const scaledWidths = validImages.map(img => {
+        const scale = targetHeight / img.naturalHeight;
+        return Math.round(img.naturalWidth * scale);
+    });
+    
+    const totalWidth = scaledWidths.reduce((sum, w) => sum + w, 0) + padding * (validImages.length - 1);
+    
+    // 캔버스 생성
+    const canvas = document.createElement("canvas");
+    canvas.width = totalWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext("2d");
+    
+    // 흰 배경
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, totalWidth, targetHeight);
+    
+    // 이미지 그리기
+    let x = 0;
+    for (let i = 0; i < validImages.length; i++) {
+        const img = validImages[i];
+        const w = scaledWidths[i];
+        ctx.drawImage(img, x, 0, w, targetHeight);
+        x += w + padding;
+    }
+    
+    // PNG blob 변환
+    return new Promise((resolve) => {
+        canvas.toBlob(blob => resolve(blob), "image/png");
+    });
 }
 
 // ================================================================

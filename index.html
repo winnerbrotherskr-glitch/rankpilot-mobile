@@ -297,10 +297,19 @@
                             <div class="share-preview-img-grid" id="share-preview-imgs"></div>
                         </div>
                     </div>
+                    <div class="share-clipboard-section-title">PC 사용 시</div>
+                    <div class="share-clipboard-actions">
+                        <button type="button" class="share-clipboard-btn" id="share-copy-image-btn">
+                            <span class="share-clipboard-icon">📷</span> 캡처 복사
+                        </button>
+                        <button type="button" class="share-clipboard-btn" id="share-copy-text-btn">
+                            <span class="share-clipboard-icon">📋</span> 텍스트 복사
+                        </button>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="modal-btn modal-btn-secondary" id="share-copy-btn">📋 복사</button>
-                    <button type="button" class="modal-btn modal-btn-kakao" id="share-send-btn">📲 공유하기</button>
+                    <button type="button" class="modal-btn modal-btn-secondary" data-close="share-modal">닫기</button>
+                    <button type="button" class="modal-btn modal-btn-kakao" id="share-send-btn">📲 모바일 공유</button>
                 </div>
             </div>
         </div>
@@ -317,9 +326,20 @@
                 <div class="modal-body" id="group-share-body">
                     <div class="empty-state"><div class="spinner" style="margin: 0 auto;"></div></div>
                 </div>
+                <div class="modal-footer-clipboard" style="padding: 0 var(--space-5) var(--space-2);">
+                    <div class="share-clipboard-section-title">PC 사용 시</div>
+                    <div class="share-clipboard-actions">
+                        <button type="button" class="share-clipboard-btn" id="group-share-copy-image-btn">
+                            <span class="share-clipboard-icon">📷</span> 캡처 복사
+                        </button>
+                        <button type="button" class="share-clipboard-btn" id="group-share-copy-text-btn">
+                            <span class="share-clipboard-icon">📋</span> 텍스트 복사
+                        </button>
+                    </div>
+                </div>
                 <div class="modal-footer">
-                    <button type="button" class="modal-btn modal-btn-secondary" id="group-share-copy-btn">📋 복사</button>
-                    <button type="button" class="modal-btn modal-btn-kakao" id="group-share-send-btn">📲 공유하기</button>
+                    <button type="button" class="modal-btn modal-btn-secondary" data-close="group-share-modal">닫기</button>
+                    <button type="button" class="modal-btn modal-btn-kakao" id="group-share-send-btn">📲 모바일 공유</button>
                 </div>
             </div>
         </div>
