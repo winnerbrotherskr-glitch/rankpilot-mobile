@@ -151,6 +151,8 @@ function navigate(tab, params = {}) {
         State.selectedKwIds.clear();
         const bar = $("#selection-bar");
         if (bar) bar.remove();
+        const fab = $("#group-detail-fab");
+        if (fab) fab.remove();
     }
     
     State.currentTab = tab;
@@ -671,11 +673,6 @@ function renderGroupDetail() {
                             📊 매트릭스
                         </button>
                     `}
-                    ${!ownerUserId ? `
-                        <button class="group-action-btn" id="grp-detail-add-kw">
-                            + 키워드
-                        </button>
-                    ` : ''}
                 `}
             </div>
         </div>
@@ -712,6 +709,20 @@ function renderGroupDetail() {
     }
     
     $("#group-detail-content").innerHTML = html;
+    
+    // FAB (떠다니는 + 버튼) — 본인 그룹 + 선택 모드 아닐 때만
+    const existingFab = document.getElementById("group-detail-fab");
+    if (existingFab) existingFab.remove();
+    
+    if (!ownerUserId && !selectMode) {
+        const fab = document.createElement("button");
+        fab.id = "group-detail-fab";
+        fab.className = "fab fab-extended";
+        fab.innerHTML = '<span style="font-size: 22px; line-height: 1;">+</span> <span style="font-size: 14px; font-weight: 600;">키워드</span>';
+        fab.title = "키워드 추가";
+        fab.addEventListener("click", () => openKeywordModal(group.id));
+        document.body.appendChild(fab);
+    }
     
     // 이벤트 바인딩
     $$(".filter-tab").forEach(t => {
@@ -760,6 +771,7 @@ function renderGroupDetail() {
         navigate("matrix");
     });
     
+    // FAB(아래 둥근 +)가 키워드 추가 처리. 호환 위해 인라인 버튼도 받음
     const addKwBtn = $("#grp-detail-add-kw");
     if (addKwBtn) addKwBtn.addEventListener("click", () => openKeywordModal(group.id));
     
